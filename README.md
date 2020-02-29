@@ -16,37 +16,33 @@ As the plex server is not compatible with xmp metadata inside photos, this pytho
 
 ### change values to fit your installation in plexUsers.py
     
-´´´python
+```python
+#if you do not have a token you have to supply your credentials
+PLEX_LOGIN = ''
+PLEX_PASS = ''
+# if you already have a token pass it here
+PLEX_TOKEN = ''
+# the plex server url
+PLEX_URL = 'http://192.168.0.200:32400' # including http(s) (local url is best)
+# provide the usernames for which the rating should be updated
+# when users have a pin we need this, otherwise set it to ''
+USERDATA = { 'user': '1234' }
 
-    #if you do not have a token you have to supply your credentials
-    PLEX_LOGIN = ''
-    PLEX_PASS = ''
-    # if you already have a token pass it here
-    PLEX_TOKEN = ''
-    # the plex server url
-    PLEX_URL = 'http://192.168.0.200:32400' # including http(s) (local url is best)
-    # provide the usernames for which the rating should be updated
-    # when users have a pin we need this, otherwise set it to ''
-    USERDATA = { 'user': '1234' }
+# for the access tokens we need the exact server name
+SERVERNAME = 'plex'
 
-    # for the access tokens we need the exact server name
-    SERVERNAME = 'plex'
-
-    # path of the photo library in plex
-    PHOTOS_LIBRARY_PATH = '/share/Photos'
-
-´´´
+# path of the photo library in plex
+PHOTOS_LIBRARY_PATH = '/share/Photos'
+```
 
 For getting a valid token you can enter you login credentials and run the script.
 It will then output this:
 
-´´´
-
+```
 use this token
 xxxxxxxxxxxxxxxxxxxxxxx
 and put it into plexUsers.py file after PLEX_TOKEN: 
-
-´´´
+```
 
 put the token into plexUsers.py
 
@@ -54,14 +50,12 @@ put the token into plexUsers.py
 
 Adjust the paths for the photos (for ppTag)
 
-´´´python
-
+```python
     if system == "Linux":
     photosPath = "/Photos/" # Running in Docker
 else:
     photosPath = "P:\\" # Windows
-
-´´´
+```
 
 ## how it works
 
