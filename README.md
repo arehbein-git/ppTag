@@ -44,14 +44,12 @@ xxxxxxxxxxxxxxxxxxxxxxx
 and put it into plexUsers.py file after PLEX_TOKEN: 
 ```
 
-put the token into plexUsers.py
-
 ### change values to fit your installation in ppTag.py
 
 Adjust the paths for the photos (for ppTag)
 
 ```python
-    if system == "Linux":
+if system == "Linux":
     photosPath = "/Photos/" # Running in Docker
 else:
     photosPath = "P:\\" # Windows
