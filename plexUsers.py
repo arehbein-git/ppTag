@@ -102,14 +102,15 @@ class plexUsers():
         for user in self.users:
             params = urllib.parse.urlencode({'pin': user.pin, 'X-Plex-Client-Identifier': self.clientId})
             data = self.fetchPlexApi('/api/v2/home/users/{uuid}/switch'.format(uuid=user.uuid), 'POST', True, self.PLEX_TOKEN, params)
-            authToken = data['authToken']
-            data = self.fetchPlexApi('/api/resources?includeHttps=1&includeRelay=1&X-Plex-Client-Identifier={clientid}'.format(clientid=self.clientId), 'GET', True, authToken)
-            for device in data['MediaContainer']['Device']:
-                if isinstance(device, dict):
-                    if device.get('@provides') == 'server' and device.get('@name') == self.SERVERNAME:
-                        self.serverId = device.get('@clientIdentifier')
-                        user.setToken(device.get('@accessToken'))
-                        break
+            if 'authToken' in data:
+                authToken = data['authToken']
+                data = self.fetchPlexApi('/api/resources?includeHttps=1&includeRelay=1&X-Plex-Client-Identifier={clientid}'.format(clientid=self.clientId), 'GET', True, authToken)
+                for device in data['MediaContainer']['Device']:
+                    if isinstance(device, dict):
+                        if device.get('@provides') == 'server' and device.get('@name') == self.SERVERNAME:
+                            self.serverId = device.get('@clientIdentifier')
+                            user.setToken(device.get('@accessToken'))
+                            break
 
     def __init__(self):
         ## some initial tests
