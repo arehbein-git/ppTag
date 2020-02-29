@@ -1,0 +1,8 @@
+version: '3'
+services:
+  pptag:
+    image: pptag:latest
+    restart: always
+    volumes:
+      - /share/Photos/:/Photos
+      - /share/Container/pptag/:/app/pptag
