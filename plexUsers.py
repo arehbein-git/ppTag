@@ -59,7 +59,7 @@ class plexUsers():
             url = 'plex.tv'
             connection = http.client.HTTPSConnection(url)
         else:
-            url = self.PLEX_URL.rstrip('/').strip('http://')
+            url = self.PLEX_URL.rstrip('/').replace('http://','')
             connection = http.client.HTTPConnection(url)
 
         try:
