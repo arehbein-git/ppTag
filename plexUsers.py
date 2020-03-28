@@ -140,10 +140,11 @@ class plexUsers():
         apiUsers = self.fetchPlexApi("/api/home/users","GET",True)
 
         for user in apiUsers['MediaContainer']['User']:
-            if user['@title'] in self.USERDATA.keys():
-                pin = self.USERDATA.get(user['@title'])
-                u = userData(user['@id'],user['@uuid'],user['@title'], pin)
-                self.users.append(u)
+            if isinstance(user, dict):
+                if user['@title'] in self.USERDATA.keys():
+                    pin = self.USERDATA.get(user['@title'])
+                    u = userData(user['@id'],user['@uuid'],user['@title'], pin)
+                    self.users.append(u)
 
         self.getAccessTokenForUser()
 
