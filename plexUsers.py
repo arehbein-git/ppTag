@@ -139,7 +139,15 @@ class plexUsers():
 
         apiUsers = self.fetchPlexApi("/api/home/users","GET",True)
 
-        for user in apiUsers['MediaContainer']['User']:
+        userList = apiUsers['MediaContainer']['User']
+
+        if isinstance(userList, list):
+            users = userList
+        else:
+            users = list()
+            users.append(userList)
+
+        for user in users:
             if isinstance(user, dict):
                 if user['@title'] in self.USERDATA.keys():
                     pin = self.USERDATA.get(user['@title'])
