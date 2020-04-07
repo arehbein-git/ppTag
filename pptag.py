@@ -55,9 +55,8 @@ def updateMetadata(item, tags, rating):
     #headers = {'Accept': 'application/json'}
 
     # update rating
-    if rating > 0:
-        for user in p.users:
-            data = p.fetchPlexApi("/:/rate?key=%s&identifier=com.plexapp.plugins.library&rating=%i" %(item, rating),"PUT", False, user.token)
+    for user in p.users:
+        data = p.fetchPlexApi("/:/rate?key=%s&identifier=com.plexapp.plugins.library&rating=%i" %(item, rating),"PUT", False, user.token)
 
     # write the metadata
     # prepare the tags
