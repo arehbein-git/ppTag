@@ -131,33 +131,37 @@ def updateTagsAndRating(key, filename):
         print("'%s' is unreadable" % filename)
         return
 
-    # get the tags
-    data = process_file(img_file, stop_tag=stop_tag, details=detailed, strict=strict, debug=debug)
+    try:
+        # get the tags
+        data = process_file(img_file, stop_tag=stop_tag, details=detailed, strict=strict, debug=debug)
 
-    if not data:
-        print("No EXIF information found\n")
+        if not data:
+            print("No EXIF information found\n")
+            return
+
+        if 'JPEGThumbnail' in data:
+            # logger.info('File has JPEG thumbnail')
+            del data['JPEGThumbnail']
+        if 'TIFFThumbnail' in data:
+            # logger.info('File has TIFF thumbnail')
+            del data['TIFFThumbnail']
+
+        # xmp data
+        if 'Image ApplicationNotes' in data:
+            xml = data['Image ApplicationNotes'].printable
+
+            parsedXMP = parse_xmp_for_lightroom_tags(xml)
+
+            updateMetadata(key, parsedXMP['tags'], int(parsedXMP['rating'])*2)
+
+        # if 'Image Copyright' in data:
+        #     print("Copyright : %s", data['Image Copyright'].printable)
+
+        # if 'EXIF DateTimeOriginal' in data:
+        #     print(datetime.ParseDate(data['EXIF DateTimeOriginal'].printable))
+    except:
+        # it is a corrupt file (exif/xmp)
         return
-
-    if 'JPEGThumbnail' in data:
-        # logger.info('File has JPEG thumbnail')
-        del data['JPEGThumbnail']
-    if 'TIFFThumbnail' in data:
-        # logger.info('File has TIFF thumbnail')
-        del data['TIFFThumbnail']
-
-    # xmp data
-    if 'Image ApplicationNotes' in data:
-        xml = data['Image ApplicationNotes'].printable
-
-        parsedXMP = parse_xmp_for_lightroom_tags(xml)
-
-        updateMetadata(key, parsedXMP['tags'], int(parsedXMP['rating'])*2)
-
-    # if 'Image Copyright' in data:
-    #     print("Copyright : %s", data['Image Copyright'].printable)
-
-    # if 'EXIF DateTimeOriginal' in data:
-    #     print(datetime.ParseDate(data['EXIF DateTimeOriginal'].printable))
 
 
 def triggerLoopThroughAllPhotos():
