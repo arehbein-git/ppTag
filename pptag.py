@@ -117,7 +117,7 @@ def updateTagsAndRating(key, filename):
     try:
         img_file = open(str(filename), 'rb')
     except IOError:
-        print("'%s' is unreadable" % filename)
+        #print("'%s' is unreadable" % filename)
         return
 
     try:
@@ -125,7 +125,7 @@ def updateTagsAndRating(key, filename):
         data = process_file(img_file, stop_tag=stop_tag, details=detailed, strict=strict, debug=debug)
 
         if not data:
-            print("No EXIF information found\n")
+            #print("No EXIF information found\n")
             return
 
         if 'JPEGThumbnail' in data:
