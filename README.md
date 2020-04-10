@@ -13,25 +13,39 @@ As the plex server is not compatible with xmp metadata inside photos, this pytho
 
 ## what you need to change
 
-### change values to fit your installation in plexUsers.py
+### change values to fit your installation in config.py
     
 ```python
-#if you do not have a token you have to supply your credentials
-PLEX_LOGIN = ''
-PLEX_PASS = ''
-# if you already have a token pass it here
-PLEX_TOKEN = ''
-# the plex server url
-PLEX_URL = 'http://192.168.0.200:32400' # including http(s) (local url is best)
-# provide the usernames for which the rating should be updated
-# when users have a pin we need this, otherwise set it to ''
-USERDATA = { 'user': '1234' }
+    ####################### Change HERE #######################
+    #if you do not have a token you have to supply your credentials
+    PLEX_LOGIN = ''
+    PLEX_PASS = ''
 
-# for the access tokens we need the exact server name
-SERVERNAME = 'plex'
+    # if you already have a token pass it here
+    PLEX_TOKEN = ''
 
-# path of the photo library in plex
-PHOTOS_LIBRARY_PATH = '/share/Photos'
+    # the plex server url
+    PLEX_URL = 'http://192.168.0.200:32400' # including http(s) (local url is best)
+
+    # provide the usernames for which the rating should be updated
+    # when users have a pin we need this, otherwise set it to ''
+    USERDATA = { 'user': '1234' }
+
+    # for the access tokens we need the exact server name
+    SERVERNAME = 'plexserver'
+
+    # path of the photo library in plex (absolute path)
+    PHOTOS_LIBRARY_PATH_PLEX = '/<some path>/'
+
+    # for the correct path creation we need the path to the
+    # photo library from the view of the script (absolute path)
+    # Linux/Mac: "/<some path>/"
+    # Windows: "C:\\some folder\\some folder\\" # (paths need escaping)
+    PHOTOS_LIBRARY_PATH = "/<some path>/"
+
+    # start an update at the start of the script
+    FORCE_RUN_AT_START = True
+    ###########################################################
 ```
 
 For getting a valid token you can enter you login credentials and run the script.
@@ -40,18 +54,7 @@ It will then output this:
 ```
 use this token
 xxxxxxxxxxxxxxxxxxxxxxx
-and put it into plexUsers.py file after PLEX_TOKEN: 
-```
-
-### change values to fit your installation in ppTag.py
-
-Adjust the paths for the photos (for ppTag)
-
-```python
-if system == "Linux":
-    photosPath = "/Photos/" # Running in Docker
-else:
-    photosPath = "P:\\" # Windows
+and put it into the file config.py after PLEX_TOKEN:
 ```
 
 ## how it works
@@ -67,5 +70,5 @@ Images are scanned for adobe lightroom tags and rating written to the XMP data i
 ## Docker Container
 
 You can use the provided docker file and docker-compose to run ppTag inside docker.
-The Container needs to Volumes. One for the photos and the second for the app.
+The Container needs two Volumes. One for the photos and the second for the app.
 This way it is easy to make changes to the files (config)

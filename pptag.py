@@ -8,7 +8,6 @@ import getopt
 import logging
 import urllib
 import time
-import platform
 from threading import Timer
 from watchdog.observers import Observer
 from watchdog.events import PatternMatchingEventHandler
@@ -19,21 +18,12 @@ from OneShotQueueTimer import OneShotQueueTimer
 from plexUsers import plexUsers
 from lightroomTags import parse_xmp_for_lightroom_tags
 
+from config import ppTagConfig
+
 logger = exif_log.get_logger()
 
-system = platform.system()
-
-####################### Change HERE #######################
-
-if system == "Linux":
-    photosPath = "/Photos/"
-else: # Windows
-    photosPath = "P:\\"
-
-########################################################### 
-   
 doUpdate = []
-firstRun = True
+firstRun = ppTagConfig.FORCE_RUN_AT_START
 
 # plex
 p = None
@@ -122,7 +112,7 @@ def updateTagsAndRating(key, filename):
 
     #exif_log.setup_logger(debug, color)
 
-    filename = photosPath + filename
+    filename = ppTagConfig.PHOTOS_LIBRARY_PATH + filename
 
     try:
         img_file = open(str(filename), 'rb')
@@ -202,7 +192,7 @@ def loopThroughAllPhotos():
                 if mediaType != "photo":
                     continue
                 key = photo["ratingKey"]
-                src = photo["Media"][0]["Part"][0]["file"].replace(plexUsers.PHOTOS_LIBRARY_PATH,"", 1)
+                src = photo["Media"][0]["Part"][0]["file"].replace(ppTagConfig.PHOTOS_LIBRARY_PATH_PLEX,"", 1)
 
                 if src in doUpdateTemp or firstRun:
 
@@ -236,7 +226,7 @@ class PhotoHandler(PatternMatchingEventHandler):
         if (event.event_type == 'modified' or event.event_type ==  'created' or event.event_type == 'moved'):
             if not event.is_directory:
                 # put file into forced update list
-                doUpdate.append(event.src_path.replace(photosPath,"", 1))
+                doUpdate.append(event.src_path.replace(ppTagConfig.PHOTOS_LIBRARY_PATH,"", 1))
                 triggerLoopThroughAllPhotos()
 
     def on_modified(self, event):
@@ -250,7 +240,7 @@ if __name__ == '__main__':
 
     # setup observer
     observer = Observer()
-    observer.schedule(PhotoHandler(), path=photosPath, recursive=True)
+    observer.schedule(PhotoHandler(), path=ppTagConfig.PHOTOS_LIBRARY_PATH, recursive=True)
 
     # setup timer
     # wait 120 sec after change was detected

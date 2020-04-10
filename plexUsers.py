@@ -11,6 +11,7 @@ from plexapi.server import PlexServer
 from plexapi.myplex import MyPlexAccount
 from plexapi.myplex import MyPlexDevice
 from uuid import uuid3, NAMESPACE_URL
+from config import ppTagConfig
 
 class userData(object):
     """a simple class that holds some user data"""
@@ -30,28 +31,9 @@ class userData(object):
         self.token = token
 
 class plexUsers():
+    """A class to get user data (token, library id) for plex"""
 
-    ####################### Change HERE #######################
-    #if you do not have a token you have to supply your credentials
-    PLEX_LOGIN = ''
-    PLEX_PASS = ''
-    # if you already have a token pass it here
-    PLEX_TOKEN = ''
-    # the plex server url
-    PLEX_URL = 'http://192.168.0.200:32400'
-    # provide the usernames for which the rating should be updated
-    # when users have a pin we need this, otherwise set it to ''
-    USERDATA = { 'user': '1234' }
-
-    # for the access tokens we need the exact server name
-    SERVERNAME = 'plexserver'
-
-    # path of the photo library in plex
-    PHOTOS_LIBRARY_PATH = '/share/Photos/'
-
-    ###########################################################
-
-    def fetchPlexApi(self, path='', method='GET', getFormPlextv=False, token=PLEX_TOKEN, params=None):
+    def fetchPlexApi(self, path='', method='GET', getFormPlextv=False, token=ppTagConfig.PLEX_TOKEN, params=None):
         """a helper function that fetches data from and put data to the plex server"""
         headers = {'X-Plex-Token': token,
                 'Accept': 'application/json'}
@@ -59,7 +41,7 @@ class plexUsers():
             url = 'plex.tv'
             connection = http.client.HTTPSConnection(url)
         else:
-            url = self.PLEX_URL.rstrip('/').replace('http://','')
+            url = ppTagConfig.PLEX_URL.rstrip('/').replace('http://','')
             connection = http.client.HTTPConnection(url)
 
         try:
@@ -101,29 +83,29 @@ class plexUsers():
     def getAccessTokenForUser(self):
         for user in self.users:
             params = urllib.parse.urlencode({'pin': user.pin, 'X-Plex-Client-Identifier': self.clientId})
-            data = self.fetchPlexApi('/api/v2/home/users/{uuid}/switch'.format(uuid=user.uuid), 'POST', True, self.PLEX_TOKEN, params)
+            data = self.fetchPlexApi('/api/v2/home/users/{uuid}/switch'.format(uuid=user.uuid), 'POST', True, ppTagConfig.PLEX_TOKEN, params)
             if 'authToken' in data:
                 authToken = data['authToken']
                 data = self.fetchPlexApi('/api/resources?includeHttps=1&includeRelay=1&X-Plex-Client-Identifier={clientid}'.format(clientid=self.clientId), 'GET', True, authToken)
                 for device in data['MediaContainer']['Device']:
                     if isinstance(device, dict):
-                        if device.get('@provides') == 'server' and device.get('@name') == self.SERVERNAME:
+                        if device.get('@provides') == 'server' and device.get('@name') == ppTagConfig.SERVERNAME:
                             self.serverId = device.get('@clientIdentifier')
                             user.setToken(device.get('@accessToken'))
                             break
 
     def __init__(self):
         ## some initial tests
-        if len(self.PLEX_TOKEN) == 0:
+        if len(ppTagConfig.PLEX_TOKEN) == 0:
             # get a token
             try:
-                account = MyPlexAccount(self.PLEX_LOGIN, self.PLEX_PASS)
+                account = MyPlexAccount(ppTagConfig.PLEX_LOGIN, ppTagConfig.PLEX_PASS)
             except Exception as e:
                 raise("Error fetching from Plex API: {err}".format(err=e))
             # print the Token and message to enter it here
             print('use this token')
             print (account.authenticationToken)
-            print('and put it into this file PLEX_TOKEN: plexUsers.py')
+            print('and put it into the file config.py after PLEX_TOKEN: ')
             raise
 
         # some lists for data
@@ -134,7 +116,7 @@ class plexUsers():
         # creating the client id
         self.clientId = uuid3(NAMESPACE_URL, "pptag").hex
 
-        self.plex = PlexServer(self.PLEX_URL, self.PLEX_TOKEN)
+        self.plex = PlexServer(ppTagConfig.PLEX_URL, ppTagConfig.PLEX_TOKEN)
 
 
         apiUsers = self.fetchPlexApi("/api/home/users","GET",True)
@@ -149,8 +131,8 @@ class plexUsers():
 
         for user in users:
             if isinstance(user, dict):
-                if user['@title'] in self.USERDATA.keys():
-                    pin = self.USERDATA.get(user['@title'])
+                if user['@title'] in ppTagConfig.USERDATA.keys():
+                    pin = ppTagConfig.USERDATA.get(user['@title'])
                     u = userData(user['@id'],user['@uuid'],user['@title'], pin)
                     self.users.append(u)
 
