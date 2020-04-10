@@ -8,7 +8,6 @@ As the plex server is not compatible with xmp metadata inside photos, this pytho
 
 * python 3
 * watchdog
-* ExifRead
 * plexapi
 * xmltodict
 
