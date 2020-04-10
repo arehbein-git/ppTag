@@ -2,7 +2,6 @@
 ## python 3
 
 # pip install watchdog
-# pip install ExifRead
 
 import sys
 import getopt
@@ -14,8 +13,8 @@ from threading import Timer
 from watchdog.observers import Observer
 from watchdog.events import PatternMatchingEventHandler
 
-from exifread.tags import DEFAULT_STOP_TAG, FIELD_TYPES
-from exifread import process_file, exif_log, __version__
+from exif.exifread.tags import DEFAULT_STOP_TAG, FIELD_TYPES
+from exif.exifread import process_file, exif_log, __version__
 from OneShotQueueTimer import OneShotQueueTimer
 from plexUsers import plexUsers
 from lightroomTags import parse_xmp_for_lightroom_tags
@@ -117,7 +116,7 @@ def updateTagsAndRating(key, filename):
 
     detailed = True
     stop_tag = DEFAULT_STOP_TAG
-    debug = True
+    debug = False
     strict = False
     color = False
 
