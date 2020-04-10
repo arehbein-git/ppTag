@@ -229,7 +229,8 @@ def process_file(f, stop_tag=DEFAULT_STOP_TAG, details=True, strict=False, debug
         hdr.extract_jpeg_thumbnail()
 
     # parse XMP tags (experimental)
-    if debug and details:
+    #if debug and details:
+    if details:
         xmp_string = b''
         # Easy we already have them
         if 'Image ApplicationNotes' in hdr.tags:
