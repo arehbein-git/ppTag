@@ -5,7 +5,6 @@ RUN apt-get update && \
 
 RUN pip install plexapi
 RUN pip install watchdog
-RUN pip install ExifRead
 RUN pip install xmltodict
 
 RUN mkdir -p /app
