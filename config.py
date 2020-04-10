@@ -30,5 +30,5 @@ class ppTagConfig():
     PHOTOS_LIBRARY_PATH = "/<some path>/"
 
     # start an update at the start of the script
-    FORCE_RUN_AT_START = True
+    FORCE_RUN_AT_START = True # False
     ###########################################################
