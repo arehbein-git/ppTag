@@ -69,6 +69,24 @@ Images are scanned for adobe lightroom tags and rating written to the XMP data i
 
 ## Docker Container
 
-You can use the provided docker file and docker-compose to run ppTag inside docker.
-The Container needs two Volumes. One for the photos and the second for the app.
-This way it is easy to make changes to the files (config)
+You can use the provided docker file to build the image yourself or use the dockerhub versions arehbein/pptag.
+The container needs one volumes for the photos:
+```
+<path to photolibrary>:/Photos
+```
+The config file should be mounted as readonly:
+```
+<path to config>/config.py:/app/pptag/config.py:ro
+```
+
+
+Run the image
+
+```bash
+docker run -v <path to photolibrary>:/Photos -v <path to config>/config.py:/app/pptag/config.py:ro -d arehbein/pptag
+```
+
+Use the provided docker-compose:
+```bash
+docker-compose up -d
+```

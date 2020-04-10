@@ -1,8 +1,9 @@
 version: '3'
 services:
   pptag:
-    image: pptag:latest
+    image: arehbein/pptag:latest
     restart: always
     volumes:
       - /share/Photos/:/Photos
-      - /share/Container/pptag/:/app/pptag
+      # needs to be an absolute path
+      - /share/Container/pptag/config.py:/app/pptag/config.py:ro

@@ -12,7 +12,8 @@ RUN mkdir -p /app
 ADD run.sh /app/
 RUN chmod +x /app/run.sh
 
+RUN cd /app/ && git clone https://github.com/arehbein-git/ppTag.git pptag
+
 VOLUME /Photos
-VOLUME /app/pptag
 
 CMD [ "/app/run.sh" ]
