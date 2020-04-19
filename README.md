@@ -59,7 +59,7 @@ and put it into the file config.py after PLEX_TOKEN:
 
 ## how it works
 
-pptag needs local access to the images that are part of the plex library. An observer is started to look for changes in the path of the library. If so, all changes are processed.
+pptag needs local access to the images that are part of the plex library. An observer is started to look for changes in the path of the library. If so, all changes are processed. For this the Plex server needs to be set to automatically update all libraries, "Scan my library automatically". In addition you may select "Run a partial scan when changes are detected".
 
 pptag fetches all users and tries to get an access token for the user. This is needed as the rating of images is user based.
 
