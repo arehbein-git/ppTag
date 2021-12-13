@@ -149,7 +149,8 @@ class plexUsers():
         # print (plex.machineIdentifier)
         for section in self.plex.library.sections():
             if section.type == 'photo':
-                self.photoSections.append(section.key)
+                if ppTagConfig.PLEX_SECTION == '' or section.title == ppTagConfig.PLEX_SECTION: 
+                    self.photoSections.append(section.key)
 
         # for playlist in self.plex.playlists():
         #     if playlist.isPhoto:

@@ -82,7 +82,7 @@ def createSmartAlbum(title, tagOrSets=None, rating=0):
     else:
         return
     #for section in p.photoSections:
-    metadata = p.fetchPlexApi("/library/sections/" + section + "/tag?type=13&includeExternalMedia=1")
+    metadata = p.fetchPlexApi("/library/sections/" + str(section) + "/tag?type=13&includeExternalMedia=1")
     tags.extend(metadata["MediaContainer"]["Directory"])
 
     tagQuery = ""
@@ -101,7 +101,7 @@ def createSmartAlbum(title, tagOrSets=None, rating=0):
         ratingQuery = "userRating%3E%3E"+"=%i&" % (rating * 2)
 
     if tagQuery or ratingQuery:
-        url = "/playlists?uri=" + "server%3A%2F%2F" + p.serverId + "%2Fcom.plexapp.plugins.library%2Flibrary%2Fsections%2F" + section + "%2Fall%3F" + urllib.parse.quote(tagQuery) + urllib.parse.quote(ratingQuery) +  "sort%3ForiginallyAvailableAt%3Adesc&includeExternalMedia=1&title=" + urllib.parse.quote(title.encode("utf-8")) + "&smart=1&type=photo"
+        url = "/playlists?uri=" + "server%3A%2F%2F" + p.serverId + "%2Fcom.plexapp.plugins.library%2Flibrary%2Fsections%2F" + str(section) + "%2Fall%3F" + urllib.parse.quote(tagQuery) + urllib.parse.quote(ratingQuery) +  "sort%3ForiginallyAvailableAt%3Adesc&includeExternalMedia=1&title=" + urllib.parse.quote(title.encode("utf-8")) + "&smart=1&type=photo"
         for user in p.users:
             data = p.fetchPlexApi(url, "POST", False, user.token)
 
@@ -271,7 +271,7 @@ def fetchAndProcessByDate():
         #print('loop through all, started %i' % int(time.time()))
         while toDo:
             if len(p.photoSections):
-                url = "/library/sections/" + p.photoSections[0] + "/all?originallyAvailableAt%3E=" + str(fromTimecode) + "&originallyAvailableAt%3C=" + str(toTimecode) + "&X-Plex-Container-Start=%i&X-Plex-Container-Size=%i" % (start, size)
+                url = "/library/sections/" + str(p.photoSections[0]) + "/all?originallyAvailableAt%3E=" + str(fromTimecode) + "&originallyAvailableAt%3C=" + str(toTimecode) + "&X-Plex-Container-Start=%i&X-Plex-Container-Size=%i" % (start, size)
                 metadata = p.fetchPlexApi(url)
                 container = metadata["MediaContainer"]
                 elements = container["Metadata"]
@@ -324,7 +324,7 @@ def loopThroughAllPhotos():
     #print('loop through all, started %i' % int(time.time()))
     while toDo:
         if len(p.photoSections):
-            url = "/library/sections/" + p.photoSections[0] + "/all?clusterZoomLevel=1&X-Plex-Container-Start=%i&X-Plex-Container-Size=%i" % (start, size)
+            url = "/library/sections/" + str(p.photoSections[0]) + "/all?clusterZoomLevel=1&X-Plex-Container-Start=%i&X-Plex-Container-Size=%i" % (start, size)
             metadata = p.fetchPlexApi(url)
             container = metadata["MediaContainer"]
             elements = container["Metadata"]
