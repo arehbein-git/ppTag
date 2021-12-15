@@ -1,4 +1,4 @@
-FROM python:3
+FROM python:3-slim
 
 RUN apt-get update && \
 	apt-get -y install nano git
