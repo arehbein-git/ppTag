@@ -20,6 +20,9 @@ class ppTagConfig():
     # for the access tokens we need the exact server name
     SERVERNAME = 'plexserver'
 
+    # Photo section name in plex to focus on (empty will process the first photo section found)
+    PLEX_SECTION = ''
+
     # path of the photo library in plex (absolute path)
     PHOTOS_LIBRARY_PATH_PLEX = '/<some path>/'
 
@@ -31,4 +34,8 @@ class ppTagConfig():
 
     # start an update at the start of the script
     FORCE_RUN_AT_START = True # False
+
+    # set logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
+    LOG_LEVEL = 'ERROR'
+
     ###########################################################

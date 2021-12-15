@@ -119,8 +119,9 @@ def updateTagsAndRating(key, filename):
 
     try:
         img_file = open(str(filename), 'rb')
+        logging.info("updateTagsAndRating: '%s'" % filename)
     except IOError:
-        #print("'%s' is unreadable" % filename)
+        logging.error("'%s' is unreadable" % filename)
         return
 
     try:
@@ -171,8 +172,9 @@ def parseExifAndTags(filename):
 
     try:
         img_file = open(str(filepath), 'rb')
+        logging.info("parseExifAndTags: '%s'" % filepath)
     except IOError:
-        # print("'%s' is unreadable" % filename)
+        logging.error("'%s' is unreadable" % filename)
         return None
 
     try:
@@ -269,11 +271,14 @@ def fetchAndProcessByDate():
 
         plexData = {}
         #print('loop through all, started %i' % int(time.time()))
-        while toDo:
-            if len(p.photoSections):
+        if len(p.photoSections):
+            while toDo:
                 url = "/library/sections/" + str(p.photoSections[0]) + "/all?originallyAvailableAt%3E=" + str(fromTimecode) + "&originallyAvailableAt%3C=" + str(toTimecode) + "&X-Plex-Container-Start=%i&X-Plex-Container-Size=%i" % (start, size)
                 metadata = p.fetchPlexApi(url)
                 container = metadata["MediaContainer"]
+                if 'Metadata' not in container:
+                   # no photos in this time range (probably wrong section)
+                   break
                 elements = container["Metadata"]
                 totalSize = container["totalSize"]
                 offset = container["offset"]
@@ -322,8 +327,8 @@ def loopThroughAllPhotos():
     start = 0
     size = 1000
     #print('loop through all, started %i' % int(time.time()))
-    while toDo:
-        if len(p.photoSections):
+    if len(p.photoSections):
+        while toDo:
             url = "/library/sections/" + str(p.photoSections[0]) + "/all?clusterZoomLevel=1&X-Plex-Container-Start=%i&X-Plex-Container-Size=%i" % (start, size)
             metadata = p.fetchPlexApi(url)
             container = metadata["MediaContainer"]
@@ -345,7 +350,6 @@ def loopThroughAllPhotos():
                 # make sure path seperator is equal in plex and ppTag
                 if "\\" in ppTagConfig.PHOTOS_LIBRARY_PATH:
                     src = src.replace("/","\\")
-
                 if src in doUpdateTemp or firstRun:
 
                     # update tags and rating
@@ -362,6 +366,8 @@ def loopThroughAllPhotos():
                         triggerProcess()
                     return
 
+            for src in doUpdateTemp:
+                logging.info("Skipped file not found in this section '%s'" % src)		 
     
     # after the loop we maybe have new or modifed files which was blocked before so trigger again
     if len(doUpdate):
@@ -386,9 +392,14 @@ class PhotoHandler(PatternMatchingEventHandler):
         """
         if (event.event_type == 'modified' or event.event_type ==  'created' or event.event_type == 'moved'):
             if not event.is_directory:
-                # put file into forced update list
-                doUpdate.append(event.src_path.replace(ppTagConfig.PHOTOS_LIBRARY_PATH,"", 1))
-                triggerProcess()
+		# check if file belongs to monitored section
+                for folder in p.photoLocations[0]:
+                    if event.src_path.startswith(folder):
+                        # put file into forced update list
+                        doUpdate.append(event.src_path.replace(ppTagConfig.PHOTOS_LIBRARY_PATH,"", 1))
+                        triggerProcess()
+                        return
+                logging.debug("Ignored file in wrong location: '%s'" % event.src_path)
 
     def on_modified(self, event):
         self.process(event)
@@ -398,6 +409,10 @@ class PhotoHandler(PatternMatchingEventHandler):
 
 
 if __name__ == '__main__':
+
+    if ppTagConfig.LOG_LEVEL is None or ppTagConfig.LOG_LEVEL == '':
+         ppTagConfig.LOG_LEVEL = 'CRITICAL'
+    logging.basicConfig(level=getattr(logging,ppTagConfig.LOG_LEVEL), format='%(asctime)s %(levelname)s - %(message)s')
 
     # setup observer
     observer = Observer()

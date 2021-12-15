@@ -7,6 +7,8 @@ import xmltodict
 import json
 import urllib
 import sys
+import logging
+
 from plexapi.server import PlexServer
 from plexapi.myplex import MyPlexAccount
 from plexapi.myplex import MyPlexDevice
@@ -111,6 +113,7 @@ class plexUsers():
         # some lists for data
         self.users = list()
         self.photoSections = list()
+        self.photoLocations = list()
         self.serverId = ''
 
         # creating the client id
@@ -149,8 +152,14 @@ class plexUsers():
         # print (plex.machineIdentifier)
         for section in self.plex.library.sections():
             if section.type == 'photo':
-                if ppTagConfig.PLEX_SECTION == '' or section.title == ppTagConfig.PLEX_SECTION: 
+                if ppTagConfig.PLEX_SECTION is None or ppTagConfig.PLEX_SECTION == '' or section.title == ppTagConfig.PLEX_SECTION: 
                     self.photoSections.append(section.key)
+                    self.photoLocations.append(section.locations)
+                    break # We only use the first photo section so bail if we find one
+
+        if len(self.photoSections) == 0:
+           logging.critical("No photo section found")
+           sys.exit(1)
 
         # for playlist in self.plex.playlists():
         #     if playlist.isPhoto:
