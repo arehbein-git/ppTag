@@ -34,17 +34,23 @@ As the plex server is not compatible with xmp metadata inside photos, this pytho
     # for the access tokens we need the exact server name
     SERVERNAME = 'plexserver'
 
+    # Photo section name in plex to focus on (empty will process the first photo section found)
+    PLEX_SECTION = ''
+
     # path of the photo library in plex (absolute path)
     PHOTOS_LIBRARY_PATH_PLEX = '/<some path>/'
 
     # for the correct path creation we need the path to the
     # photo library from the view of the script (absolute path)
     # Linux/Mac: "/<some path>/"
-    # Windows: "C:\\some folder\\some folder\\" # (paths need escaping)
+    # Windows: "C:\\some folder\\some folder" # (paths need escaping)
     PHOTOS_LIBRARY_PATH = "/<some path>/"
 
     # start an update at the start of the script
-    FORCE_RUN_AT_START = True
+    FORCE_RUN_AT_START = True # False
+
+    # set logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
+    LOG_LEVEL = 'ERROR'
     ###########################################################
 ```
 
