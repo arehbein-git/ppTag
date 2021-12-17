@@ -119,7 +119,6 @@ def updateTagsAndRating(key, filename):
 
     try:
         img_file = open(str(filename), 'rb')
-        logging.info("updateTagsAndRating: '%s'" % filename)
     except IOError:
         logging.error("'%s' is unreadable" % filename)
         return
@@ -132,6 +131,7 @@ def updateTagsAndRating(key, filename):
 
         if not data:
             #print("No EXIF information found\n")
+            logging.info("No EXIF information for '%s'" % filename)
             return
 
         if 'JPEGThumbnail' in data:
@@ -147,7 +147,10 @@ def updateTagsAndRating(key, filename):
 
             parsedXMP = parse_xmp_for_lightroom_tags(xml)
 
+            logging.info("Updating Tags and Rating: '%s'" % filename)
             updateMetadata(key, parsedXMP['tags'], int(parsedXMP['rating'])*2)
+        else:
+            logging.info("No XMP data for '%s'" % filename)
 
         # if 'Image Copyright' in data:
         #     print("Copyright : %s", data['Image Copyright'].printable)
@@ -156,6 +159,7 @@ def updateTagsAndRating(key, filename):
         #     print(datetime.ParseDate(data['EXIF DateTimeOriginal'].printable))
     except:
         # it is a corrupt file (exif/xmp)
+
         return
 
 def parseExifAndTags(filename):
@@ -172,7 +176,6 @@ def parseExifAndTags(filename):
 
     try:
         img_file = open(str(filepath), 'rb')
-        logging.info("parseExifAndTags: '%s'" % filepath)
     except IOError:
         logging.error("'%s' is unreadable" % filename)
         return None
@@ -302,6 +305,7 @@ def fetchAndProcessByDate():
             if "/" in ppTagConfig.PHOTOS_LIBRARY_PATH_PLEX:
                 path = path.replace("\\","/")
             if path in plexData.keys():
+                logging.info("Updating modified file '%s'" % path)
                 updateMetadata(plexData[path], photo.tags(), photo.rating()*2)
                 photoGroups[date].remove(photo)
         
@@ -356,18 +360,15 @@ def loopThroughAllPhotos():
                     # print(key)
                     # print(src)
                     updateTagsAndRating(key, src)
-                    if not firstRun:
+                    if (src in doUpdateTemp):
                         doUpdateTemp.remove(src)
-                
-                if len(doUpdateTemp) == 0 and not firstRun:
-                    # finished
-                    # after the loop we maybe have new or modifed files which was blocked before so trigger again
-                    if len(doUpdate):
-                        triggerProcess()
-                    return
+                    if not firstRun and len(doUpdateTemp) == 0:
+                        toDo = False
+                        break
 
-            for src in doUpdateTemp:
-                logging.info("Skipped file not found in this section '%s'" % src)		 
+    if not firstRun:
+        for src in doUpdateTemp:
+            logging.info("Skipped file not found in this section '%s'" % src)		 
     
     # after the loop we maybe have new or modifed files which was blocked before so trigger again
     if len(doUpdate):
@@ -393,9 +394,10 @@ class PhotoHandler(PatternMatchingEventHandler):
         if (event.event_type == 'modified' or event.event_type ==  'created' or event.event_type == 'moved'):
             if not event.is_directory:
 		# check if file belongs to monitored section
-                for folder in p.photoLocations[0]:
+                for folder in p.photoLocations:
                     if event.src_path.startswith(folder):
                         # put file into forced update list
+                        logging.info("Queued for update: '%s'", event.src_path)
                         doUpdate.append(event.src_path.replace(ppTagConfig.PHOTOS_LIBRARY_PATH,"", 1))
                         triggerProcess()
                         return

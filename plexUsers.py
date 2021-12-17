@@ -154,7 +154,8 @@ class plexUsers():
             if section.type == 'photo':
                 if ppTagConfig.PLEX_SECTION is None or ppTagConfig.PLEX_SECTION == '' or section.title == ppTagConfig.PLEX_SECTION: 
                     self.photoSections.append(section.key)
-                    self.photoLocations = [ fldr.replace(ppTagConfig.PHOTOS_LIBRARY_PATH_PLEX,PHOTOS_LIBRARY_PATH, 1) for fldr in section.locations ]
+                    self.photoLocations = [ fldr.replace(ppTagConfig.PHOTOS_LIBRARY_PATH_PLEX,ppTagConfig.PHOTOS_LIBRARY_PATH, 1) for fldr in section.locations ]
+                    print(self.photoLocations)
                     break # We only use the first photo section so bail if we find one
 
         if len(self.photoSections) == 0:
