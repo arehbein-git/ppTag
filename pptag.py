@@ -78,7 +78,7 @@ def getdata(filename):
         if 'TIFFThumbnail' in data:
             del data['TIFFThumbnail']
     except IOError:
-        logging.error("'%s' is unreadable" % filename)
+        logging.debug("'%s' is unreadable" % filename)
         return None
     except:
         logging.error("Exif process_file error: '%s'" % filename)
@@ -124,7 +124,7 @@ def parseExifAndTags(filename):
     if 'EXIF DateTimeOriginal' in data:
         date = datetime.strptime(data['EXIF DateTimeOriginal'].printable, '%Y:%m:%d %H:%M:%S').date()
     else:
-        datetimeModified = datetime.fromtimestamp(os.path.getmtime(filepath))
+        datetimeModified = datetime.fromtimestamp(os.path.getmtime(filename))
         date = datetimeModified.date()
         
     return PhotoElement(filename, date, parsedXMP['tags'], parsedXMP['rating'])
@@ -168,6 +168,8 @@ def fetchAndProcessByDate():
                 photoGroups[date].append(photoElement)
             else:
                 photoGroups[date] = [photoElement]
+        else: # missing or not a photo
+            doUpdateTemp.remove(filepath)
 
     for date in photoGroups.keys():
         #print(date)
@@ -267,8 +269,10 @@ def loopThroughAllPhotos():
                     # print(key)
                     # print(src)
                     updateTagsAndRating(key, src)
-                    if (src in doUpdateTemp):
+                    try:
                         doUpdateTemp.remove(src)
+                    except:
+                        pass # ok if missing, probably firstRun
                     if not firstRun and len(doUpdateTemp) == 0:
                         toDo = False
                         break
@@ -303,9 +307,11 @@ class PhotoHandler(PatternMatchingEventHandler):
                 for folder in p.photoLocations:
                     if event.src_path.startswith(folder):
                         # put file into forced update list
-                        logging.info("Queued for update: '%s'", event.src_path)
-                        doUpdate.append(event.src_path.replace(ppTagConfig.PHOTOS_LIBRARY_PATH,"", 1))
-                        triggerProcess()
+                        pptag_path=event.src_path.replace(ppTagConfig.PHOTOS_LIBRARY_PATH,"", 1)
+                        if pptag_path not in doUpdate:
+                            logging.info("Queued for update: '%s'", event.src_path)
+                            doUpdate.append(pptag_path)
+                            triggerProcess()
                         return
                 logging.debug("Ignored file in wrong location: '%s'" % event.src_path)
 
