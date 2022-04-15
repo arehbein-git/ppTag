@@ -1,4 +1,4 @@
-FROM python:3
+FROM python:3-slim
 
 RUN apt-get update && \
 	apt-get -y install nano git
@@ -9,11 +9,8 @@ RUN pip install xmltodict
 
 RUN mkdir -p /app
 
-ADD run.sh /app/
-RUN chmod +x /app/run.sh
+RUN cd /app/ && git clone https://github.com/dsm1212/ppTag.git pptag
 
-RUN cd /app/ && git clone https://github.com/arehbein-git/ppTag.git pptag
+WORKDIR /app/pptag
 
-VOLUME /Photos
-
-CMD [ "/app/run.sh" ]
+CMD [ "/bin/bash","-c","python -u pptag.py" ]

@@ -7,6 +7,9 @@ import xmltodict
 import json
 import urllib
 import sys
+import logging
+import time
+
 from plexapi.server import PlexServer
 from plexapi.myplex import MyPlexAccount
 from plexapi.myplex import MyPlexDevice
@@ -101,23 +104,29 @@ class plexUsers():
             try:
                 account = MyPlexAccount(ppTagConfig.PLEX_LOGIN, ppTagConfig.PLEX_PASS)
             except Exception as e:
-                raise("Error fetching from Plex API: {err}".format(err=e))
+                print('Unable to login to plex, check PLEX_LOGIN and PLEX_PASS in the configuration file.', file=sys.stderr)
+                sys.exit()
             # print the Token and message to enter it here
             print('use this token')
             print (account.authenticationToken)
             print('and put it into the file config.py after PLEX_TOKEN: ')
-            raise
+            sys.exit()
 
         # some lists for data
         self.users = list()
-        self.photoSections = list()
+        self.photoSection = None 
+        self.photoLocations = list()
         self.serverId = ''
 
         # creating the client id
         self.clientId = uuid3(NAMESPACE_URL, "pptag").hex
 
-        self.plex = PlexServer(ppTagConfig.PLEX_URL, ppTagConfig.PLEX_TOKEN)
-
+        try:
+            self.plex = PlexServer(ppTagConfig.PLEX_URL, ppTagConfig.PLEX_TOKEN)
+        except:
+            print('Unable to connect to Plex, is it running? Check PLEX_URL and PLEX_TOKEN in the configuration.',file=sys.stderr)
+            time.sleep(5)   # docker will restart, but delay the retry
+            sys.exit()
 
         apiUsers = self.fetchPlexApi("/api/home/users","GET",True)
 
@@ -149,7 +158,15 @@ class plexUsers():
         # print (plex.machineIdentifier)
         for section in self.plex.library.sections():
             if section.type == 'photo':
-                self.photoSections.append(section.key)
+                if ppTagConfig.PLEX_SECTION is None or ppTagConfig.PLEX_SECTION == '' or section.title == ppTagConfig.PLEX_SECTION: 
+                    self.photoSection = section.key
+                    self.photoLocations = [ fldr.replace(ppTagConfig.PHOTOS_LIBRARY_PATH_PLEX,ppTagConfig.PHOTOS_LIBRARY_PATH, 1) for fldr in section.locations ]
+                    logging.info("Monitoring '%s' folders: %s" % (section.title, self.photoLocations))
+                    break # pptag only supports one first photo section so bail if we find one
+
+        if not self.photoSection:
+           logging.critical("No photo section found")
+           sys.exit(1)
 
         # for playlist in self.plex.playlists():
         #     if playlist.isPhoto:

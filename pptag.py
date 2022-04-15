@@ -34,17 +34,7 @@ p = None
 # timer
 t = None
 
-def usage(exit_status):
-    """Show command line usage."""
-    msg = ('Usage: pptag.py\n'
-           'Watch configured path for changes and start update the tags in plex\n'
-    )
-    print(msg)
-    sys.exit(exit_status)
-
 def updateMetadata(item, tags, rating):
-
-    #headers = {'Accept': 'application/json'}
 
     # update rating
     for user in p.users:
@@ -57,55 +47,11 @@ def updateMetadata(item, tags, rating):
     for tag in tags:
         tagQuery = tagQuery + "tag[%s].tag.tag=%s&" %(i, urllib.parse.quote(tag.encode('utf-8')))
         i = i + 1
-    #print(tagQuery)
+    #logging.debug("  updateMetaData: tagQuery is '%s'" % tagQuery)
 
     data = p.fetchPlexApi("/library/metadata/%s%s" %(item, tagQuery), "PUT")
 
-    # # get updatedAt attribute
-    # connection = http.client.HTTPConnection(host)
-    # headers = {'Accept': 'application/json'}
-
-    # # get the metadata
-    # connection.request("GET", "/library/metadata/%s" % item, None, headers)
-    # response = connection.getresponse()
-    # data = response.read()
-    # connection.close()
-    # metadata = json.loads(data)
-    # updatedAt = int(metadata["MediaContainer"]["Metadata"][0]["updatedAt"])
-
-def createSmartAlbum(title, tagOrSets=None, rating=0):
-    # first get all available keys from plex
-    tags = list()
-    # we support just one photosection here
-    if len(p.photoSections):
-        section = p.photoSections[0]
-    else:
-        return
-    #for section in p.photoSections:
-    metadata = p.fetchPlexApi("/library/sections/" + section + "/tag?type=13&includeExternalMedia=1")
-    tags.extend(metadata["MediaContainer"]["Directory"])
-
-    tagQuery = ""
-    for tagSet in tagOrSets:
-        tagOr = ","
-        seq = ()
-        for tagItem in tags:
-            if tagItem["title"].encode('utf-8') in tagSet:
-                seq += (tagItem["key"].encode('utf-8'),)
-        tagOr = tagOr.join(seq)
-        if tagOr:
-            tagQuery = tagQuery + "tag=%s&" % (tagOr)
-
-    ratingQuery = ""
-    if rating > 0:
-        ratingQuery = "userRating%3E%3E"+"=%i&" % (rating * 2)
-
-    if tagQuery or ratingQuery:
-        url = "/playlists?uri=" + "server%3A%2F%2F" + p.serverId + "%2Fcom.plexapp.plugins.library%2Flibrary%2Fsections%2F" + section + "%2Fall%3F" + urllib.parse.quote(tagQuery) + urllib.parse.quote(ratingQuery) +  "sort%3ForiginallyAvailableAt%3Adesc&includeExternalMedia=1&title=" + urllib.parse.quote(title.encode("utf-8")) + "&smart=1&type=photo"
-        for user in p.users:
-            data = p.fetchPlexApi(url, "POST", False, user.token)
-
-def updateTagsAndRating(key, filename):
+def getdata(filename):
 
     detailed = True
     stop_tag = DEFAULT_STOP_TAG
@@ -115,108 +61,73 @@ def updateTagsAndRating(key, filename):
 
     #exif_log.setup_logger(debug, color)
 
-    filename = ppTagConfig.PHOTOS_LIBRARY_PATH + filename
-
     try:
+        filename = ppTagConfig.PHOTOS_LIBRARY_PATH + filename
         img_file = open(str(filename), 'rb')
-    except IOError:
-        #print("'%s' is unreadable" % filename)
-        return
 
-    try:
-        # get the tags
         data = process_file(img_file, stop_tag=stop_tag, details=detailed, strict=strict, debug=debug)
 
         img_file.close()
 
         if not data:
-            #print("No EXIF information found\n")
-            return
-
-        if 'JPEGThumbnail' in data:
-            # logger.info('File has JPEG thumbnail')
-            del data['JPEGThumbnail']
-        if 'TIFFThumbnail' in data:
-            # logger.info('File has TIFF thumbnail')
-            del data['TIFFThumbnail']
-
-        # xmp data
-        if 'Image ApplicationNotes' in data:
-            xml = data['Image ApplicationNotes'].printable
-
-            parsedXMP = parse_xmp_for_lightroom_tags(xml)
-
-            updateMetadata(key, parsedXMP['tags'], int(parsedXMP['rating'])*2)
-
-        # if 'Image Copyright' in data:
-        #     print("Copyright : %s", data['Image Copyright'].printable)
-
-        # if 'EXIF DateTimeOriginal' in data:
-        #     print(datetime.ParseDate(data['EXIF DateTimeOriginal'].printable))
-    except:
-        # it is a corrupt file (exif/xmp)
-        return
-
-def parseExifAndTags(filename):
-
-    detailed = True
-    stop_tag = DEFAULT_STOP_TAG
-    debug = False
-    strict = False
-    color = False
-
-    #exif_log.setup_logger(debug, color)
-
-    filepath = ppTagConfig.PHOTOS_LIBRARY_PATH + filename
-
-    try:
-        img_file = open(str(filepath), 'rb')
-    except IOError:
-        # print("'%s' is unreadable" % filename)
-        return None
-
-    try:
-        # get the tags
-        data = process_file(img_file, stop_tag=stop_tag, details=detailed, strict=strict, debug=debug)
-
-        img_file.close()
-
-        if not data:
-            #print("No EXIF information found\n")
+            logging.info("No EXIF information for '%s'" % filename)
             return None
 
         if 'JPEGThumbnail' in data:
-            # logger.info('File has JPEG thumbnail')
             del data['JPEGThumbnail']
         if 'TIFFThumbnail' in data:
-            # logger.info('File has TIFF thumbnail')
             del data['TIFFThumbnail']
+    except IOError:
+        logging.debug("'%s' is unreadable" % filename)
+        return None
+    except:
+        logging.error("Exif process_file error: '%s'" % filename)
+        return None
 
+    return data
+
+def getXMP(data):
+    XMP = None
+    if 'Image ApplicationNotes' in data:
+        try:
+            xml = data['Image ApplicationNotes'].printable
+            XMP = parse_xmp_for_lightroom_tags(xml)
+        except:
+            logging.error("Unable to parse XMP")
+
+    return XMP
+
+def updateTagsAndRating(key, filename):
+    data = getdata(filename)
+    if not data:
+        return
+
+    parsedXMP = getXMP(data)
+    if parsedXMP:
+        logging.info("Updating Tags and Rating: '%s'" % filename)
+        updateMetadata(key, parsedXMP['tags'], int(parsedXMP['rating'])*2)
+    else:
+        logging.info("No XMP data for '%s'" % filename)
+
+def parseExifAndTags(filename):
+    data = getdata(filename)
+    if not data:
+        return None
+
+    parsedXMP = getXMP(data)
+    if not parsedXMP:
         parsedXMP = {}
         parsedXMP['rating'] = 0
         parsedXMP['tags'] = []
-        # xmp data
-        if 'Image ApplicationNotes' in data:
-            xml = data['Image ApplicationNotes'].printable
 
-            parsedXMP = parse_xmp_for_lightroom_tags(xml)
-
-        # if 'Image Copyright' in data:
-        #     print("Copyright : %s", data['Image Copyright'].printable)
-
-        date = datetime.today().date()
-        if 'EXIF DateTimeOriginal' in data:
-            date = datetime.strptime(data['EXIF DateTimeOriginal'].printable, '%Y:%m:%d %H:%M:%S').date()
-        else:
-            datetimeModified = datetime.fromtimestamp(os.path.getmtime(filepath))
-            date = datetimeModified.date()
+    date = datetime.today().date()
+    if 'EXIF DateTimeOriginal' in data:
+        date = datetime.strptime(data['EXIF DateTimeOriginal'].printable, '%Y:%m:%d %H:%M:%S').date()
+    else:
+        datetimeModified = datetime.fromtimestamp(os.path.getmtime(filename))
+        date = datetimeModified.date()
         
-        photoElement = PhotoElement(filename, date, parsedXMP['tags'], parsedXMP['rating'])
-        return photoElement
-    except:
-        # it is a corrupt file (exif/xmp)
-        return None
-
+    return PhotoElement(filename, date, parsedXMP['tags'], parsedXMP['rating'])
 
 def triggerProcess():
     global t
@@ -257,6 +168,8 @@ def fetchAndProcessByDate():
                 photoGroups[date].append(photoElement)
             else:
                 photoGroups[date] = [photoElement]
+        else: # missing or not a photo
+            doUpdateTemp.remove(filepath)
 
     for date in photoGroups.keys():
         #print(date)
@@ -267,13 +180,16 @@ def fetchAndProcessByDate():
         start = 0
         size = 1000
 
+        # Make a key list of all pics in the date range
         plexData = {}
-        #print('loop through all, started %i' % int(time.time()))
-        while toDo:
-            if len(p.photoSections):
-                url = "/library/sections/" + p.photoSections[0] + "/all?originallyAvailableAt%3E=" + str(fromTimecode) + "&originallyAvailableAt%3C=" + str(toTimecode) + "&X-Plex-Container-Start=%i&X-Plex-Container-Size=%i" % (start, size)
+        if p.photoSection:
+            while toDo:
+                url = "/library/sections/" + str(p.photoSection) + "/all?originallyAvailableAt%3E=" + str(fromTimecode) + "&originallyAvailableAt%3C=" + str(toTimecode) + "&X-Plex-Container-Start=%i&X-Plex-Container-Size=%i" % (start, size)
                 metadata = p.fetchPlexApi(url)
                 container = metadata["MediaContainer"]
+                if 'Metadata' not in container:
+                   # no photos in this time range (probably wrong section)
+                   break
                 elements = container["Metadata"]
                 totalSize = container["totalSize"]
                 offset = container["offset"]
@@ -291,22 +207,24 @@ def fetchAndProcessByDate():
 
                     plexData[src] = key
 
+        # Update the pics that changed in the date range
         for photo in photoGroups[date]:
             path = photo.path()
             # make sure path seperator is equal in plex and ppTag
             if "/" in ppTagConfig.PHOTOS_LIBRARY_PATH_PLEX:
                 path = path.replace("\\","/")
             if path in plexData.keys():
+                logging.info("Updating modified file '%s'" % path)
                 updateMetadata(plexData[path], photo.tags(), photo.rating()*2)
                 photoGroups[date].remove(photo)
-        
-        
-        for photo in photoGroups[date]:
-            # we need to fetch all data as this method failed
-            # print(photo.path() + " was not processed!")
-            doUpdate = [*doUpdate, *doUpdateTemp]
-            return True
-    
+                doUpdateTemp.remove(path)
+
+    # if we failed to process something then try a full scan
+    if len(doUpdateTemp):
+        logging.warning("Some updated files were not found by date range.")
+        doUpdate = [*doUpdate, *doUpdateTemp]
+        return True
+
     # after the loop we maybe have new or modifed files which was blocked before so trigger again
     if len(doUpdate):
         triggerProcess()
@@ -322,9 +240,9 @@ def loopThroughAllPhotos():
     start = 0
     size = 1000
     #print('loop through all, started %i' % int(time.time()))
-    while toDo:
-        if len(p.photoSections):
-            url = "/library/sections/" + p.photoSections[0] + "/all?clusterZoomLevel=1&X-Plex-Container-Start=%i&X-Plex-Container-Size=%i" % (start, size)
+    if p.photoSection:
+        while toDo:
+            url = "/library/sections/" + str(p.photoSection) + "/all?clusterZoomLevel=1&X-Plex-Container-Start=%i&X-Plex-Container-Size=%i" % (start, size)
             metadata = p.fetchPlexApi(url)
             container = metadata["MediaContainer"]
             elements = container["Metadata"]
@@ -345,29 +263,28 @@ def loopThroughAllPhotos():
                 # make sure path seperator is equal in plex and ppTag
                 if "\\" in ppTagConfig.PHOTOS_LIBRARY_PATH:
                     src = src.replace("/","\\")
-
                 if src in doUpdateTemp or firstRun:
 
                     # update tags and rating
                     # print(key)
                     # print(src)
                     updateTagsAndRating(key, src)
-                    if not firstRun:
+                    try:
                         doUpdateTemp.remove(src)
-                
-                if len(doUpdateTemp) == 0 and not firstRun:
-                    # finished
-                    # after the loop we maybe have new or modifed files which was blocked before so trigger again
-                    if len(doUpdate):
-                        triggerProcess()
-                    return
+                    except:
+                        pass # ok if missing, probably firstRun
+                    if not firstRun and len(doUpdateTemp) == 0:
+                        toDo = False
+                        break
 
+    if not firstRun:
+        for src in doUpdateTemp:
+            logging.info("Skipped file not found in this section '%s'" % src)		 
     
     # after the loop we maybe have new or modifed files which was blocked before so trigger again
     if len(doUpdate):
         triggerProcess()
-        #print("change detected while processing, retrigger")
-    #print('loop through all, done %i' % int(time.time()))
+
     firstRun = False
 
 
@@ -386,9 +303,17 @@ class PhotoHandler(PatternMatchingEventHandler):
         """
         if (event.event_type == 'modified' or event.event_type ==  'created' or event.event_type == 'moved'):
             if not event.is_directory:
-                # put file into forced update list
-                doUpdate.append(event.src_path.replace(ppTagConfig.PHOTOS_LIBRARY_PATH,"", 1))
-                triggerProcess()
+		# check if file belongs to monitored section
+                for folder in p.photoLocations:
+                    if event.src_path.startswith(folder):
+                        # put file into forced update list
+                        pptag_path=event.src_path.replace(ppTagConfig.PHOTOS_LIBRARY_PATH,"", 1)
+                        if pptag_path not in doUpdate:
+                            logging.info("Queued for update: '%s'", event.src_path)
+                            doUpdate.append(pptag_path)
+                            triggerProcess()
+                        return
+                logging.debug("Ignored file in wrong location: '%s'" % event.src_path)
 
     def on_modified(self, event):
         self.process(event)
@@ -398,6 +323,10 @@ class PhotoHandler(PatternMatchingEventHandler):
 
 
 if __name__ == '__main__':
+
+    if ppTagConfig.LOG_LEVEL is None or ppTagConfig.LOG_LEVEL == '':
+         ppTagConfig.LOG_LEVEL = 'CRITICAL'
+    logging.basicConfig(level=getattr(logging,ppTagConfig.LOG_LEVEL), format='%(asctime)s %(levelname)s - %(message)s')
 
     # setup observer
     observer = Observer()
