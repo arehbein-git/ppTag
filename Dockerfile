@@ -9,7 +9,7 @@ RUN pip install xmltodict
 
 RUN mkdir -p /app
 
-RUN cd /app/ && git clone https://github.com/dsm1212/ppTag.git pptag
+RUN cd /app/ && git clone https://github.com/arehbein/ppTag.git pptag
 
 WORKDIR /app/pptag
 
