@@ -98,6 +98,10 @@ class plexUsers():
             if 'authToken' in data:
                 authToken = data['authToken']
                 data = self.fetchPlexApi('/api/resources?includeHttps=1&includeRelay=1&X-Plex-Client-Identifier={clientid}'.format(clientid=self.clientId), 'GET', True, authToken)
+                if not 'MediaContainer' in data.keys():
+                    break
+                if not 'Device' in data['MediaContainer'].keys():
+                    break
                 for device in data['MediaContainer']['Device']:
                     if isinstance(device, dict):
                         if device.get('@provides') == 'server' and device.get('@name') == ppTagConfig.SERVERNAME:
